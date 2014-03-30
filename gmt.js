@@ -1,7 +1,57 @@
-(function(window, document, version, callback) {
-    var j, d;
+(
+  function(window, document, version, callback) {
+
+    /**
+     * Simply compares two string version values.
+     *
+     * Example:
+     * versionCompare('1.1', '1.2') => -1
+     * versionCompare('1.1', '1.1') =>  0
+     * versionCompare('1.2', '1.1') =>  1
+     * versionCompare('2.23.3', '2.22.3') => 1
+     *
+     * Returns:
+     * -1 = left is LOWER than right
+     *  0 = they are equal
+     *  1 = left is GREATER = right is LOWER
+     *  And FALSE if one of input versions are not valid
+     *
+     * @function
+     * @param {String} left  Version #1
+     * @param {String} right Version #2
+     * @return {Integer|Boolean}
+     * @author Alexey Bass (albass)
+     * @since 2011-07-14
+     */
+    versionCompare = function(left, right) {
+        if (typeof left + typeof right != 'stringstring')
+            return false;
+
+        var a = left.split('.')
+        ,   b = right.split('.')
+        ,   i = 0, len = Math.max(a.length, b.length);
+
+        for (; i < len; i++) {
+            if ((a[i] && !b[i] && parseInt(a[i]) > 0) || (parseInt(a[i]) > parseInt(b[i]))) {
+                return 1;
+            } else if ((b[i] && !a[i] && parseInt(b[i]) > 0) || (parseInt(a[i]) < parseInt(b[i]))) {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    var j = window.jQuery;
+    var d;
     var loaded = false;
-    if (!(j = window.jQuery) || version > j.fn.jquery || callback(j, loaded)) {
+    var v = 0;
+
+    if(j) {
+      v = versionCompare(j.fn.jquery,version);
+    }
+
+    if (!j || (v != 1) || callback(j, loaded)) {
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = "http://ajax.googleapis.com/ajax/libs/jquery/" + version + "/jquery.min.js";
@@ -22,8 +72,9 @@
 
       //Establish our default settings
       var settings = $.extend({
-          endpoint : 'http://localhost/gmtApi/public/experiment/',
-          id: null
+          endpoint : 'http://timedresponse.io/experiment/',
+          id: null,
+          complete: null
       }, options);
 
       //Save copy of element plugin is attached to
@@ -33,6 +84,18 @@
 
       var height = 500;
       var width = 960;
+
+      //Timeout func for automaticall moving slides
+      var timeout = null;
+
+      /**
+      Validate settings
+      */
+      if(!settings.id) {
+        var err = 'Error: No experiment id given.';
+        console.log(err);
+        element.html(err);
+      }
 
       /**
       Load experiment
@@ -47,7 +110,7 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
           }).done(function(data) {
-              var b = drawExperiment(20, height,width);
+              var b = drawExperiment(20,height,width);
               element.html(b);
               element.data('experiment',data.data);
               var fingerprint = new Fingerprint().get();
@@ -64,8 +127,9 @@
 
           }).fail(function() {
               //An error occurred
-              console.log('Failed to load experiment from API');
-              element.html('Failed to load experiment from API');
+              var err = 'Error: Failed to load experiment from API';
+              console.log(err);
+              element.html(err);
           });
       }
       /**
@@ -97,17 +161,18 @@
 
           //Add click event
           $( ".slide" ).on( "click", function() {
-              var currentSlide = slides.siblings('.current');
               var userInput = 'click';
-              nextSlide(currentSlide,userInput);
+              nextSlide(userInput);
           });
 
           //Add touch event
           $( ".slide" ).on( "touchstart", function() {
-              var currentSlide = slides.siblings('.current');
               var userInput = 'touch';
-              nextSlide(currentSlide,userInput);
+              nextSlide(userInput);
           });
+
+          //Add first timeout
+          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 200);
 
       }
       /**
@@ -154,7 +219,7 @@
             //console.log(data);
             saved = true;
         }).fail(function() {
-            console.log('Failed to save responses');
+            console.log('Error: Failed to save responses');
         });
       }
       /**
@@ -165,12 +230,20 @@
       Displays next slide
       slides, slideNumber and startTime are global vars
       */
-      function nextSlide(currentSlide,input) {
+      function nextSlide(input) {
+
+        var currentSlide = slides.siblings('.current');
+
+        //Stop current timeout
+        clearTimeout(timeout);
 
         //Store response data each slide
         if(slideNumber <= slides.length) {
           var responseTime = getTimestamp() - startTime;
           createResponse(input,element.data('participantId'),element.data('sessionId'),slideNumber,responseTime);
+
+          //Recall on timeout if there's no click
+          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 2000);
         }
 
         if(slideNumber < slides.length) {
@@ -182,10 +255,18 @@
           currentSlide.removeClass('current');
           startTime = getTimestamp();
           slideNumber++;
-        }
 
-        if(slideNumber == (slides.length)) {
           saveResponses(true);
+          element.hide();
+
+          //At end of experiment optionally call user defined function
+          //Looks for global function it's possible to change the context if need be see http://stackoverflow.com/questions/359788/how-to-execute-a-javascript-function-when-i-have-its-name-as-a-string
+          if(settings.complete) {
+            var fn = window[settings.complete];
+            if(typeof fn === 'function') {
+                fn();
+            }
+          }
         }
       }
       /**
@@ -218,7 +299,7 @@
     */
 
     //Draw experiment body
-    function drawExperiment(slides, height,width) {
+    function drawExperiment(slides,height,width) {
       var s = '';
 
       for (var i=0;i<slides;i++) {
@@ -367,9 +448,8 @@
     */
 
     //////// GO, GO, G0 ///////
-    var id = $( "#response-experiment" ).data( "id");
-    $( "#response-experiment" ).response({id : id});
-
+    var options = $( "#response-experiment" ).data();
+    $( "#response-experiment" ).response(options);
 });
 
 
