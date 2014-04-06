@@ -5,11 +5,21 @@
         <script src="../fingerprint.js"></script>
         <script>
             function hello() {
-                alert('hello world');
+                console.log('hello triggered');
             }
         </script>
+        <style type="text/css">
+            html, body {
+                margin: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+        </style>
     </head>
     <body>
-        <div id="response-experiment" data-id="53371e78642c87c707d63af1" data-complete="hello" style="width: 960px; margin-left: auto ; margin-right: auto ;"></div>
+        <div style="width:100%; height:100%;">
+            <div id="response-experiment" data-id="53371e78642c87c707d63af1" data-complete="hello"></div>
+        </div>
     </body>
 </html>

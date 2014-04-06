@@ -74,7 +74,7 @@
       var settings = $.extend({
           endpoint : 'http://timedresponse.io/experiment/',
           id: null,
-          complete: null
+          complete: null,
       }, options);
 
       //Save copy of element plugin is attached to
@@ -82,8 +82,8 @@
       //Has experiment data been saved
       var saved = false;
 
-      var height = 500;
-      var width = 960;
+      var height = element.parent().height();
+      var width = element.parent().width();
 
       //Timeout func for automaticall moving slides
       var timeout = null;
@@ -449,6 +449,7 @@
 
     //////// GO, GO, G0 ///////
     var options = $( "#response-experiment" ).data();
+    console.log(options);
     $( "#response-experiment" ).response(options);
 });
 
