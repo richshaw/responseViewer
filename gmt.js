@@ -27,9 +27,7 @@
         if (typeof left + typeof right != 'stringstring')
             return false;
 
-        var a = left.split('.')
-        ,   b = right.split('.')
-        ,   i = 0, len = Math.max(a.length, b.length);
+        var a = left.split('.'),b = right.split('.'),i = 0, len = Math.max(a.length, b.length);
 
         for (; i < len; i++) {
             if ((a[i] && !b[i] && parseInt(a[i]) > 0) || (parseInt(a[i]) > parseInt(b[i]))) {
@@ -72,7 +70,7 @@
 
       //Establish our default settings
       var settings = $.extend({
-          endpoint : 'http://timedresponse.io/experiment/',
+          endpoint : 'http://www.timedresponse.io.php54-2.ord1-1.websitetestlink.com/experiment/',
           id: null,
           complete: null,
       }, options);
@@ -110,7 +108,7 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
           }).done(function(data) {
-              var b = drawExperiment(20,height,width);
+              var b = drawExperiment(50,height,width);
               element.html(b);
               element.data('experiment',data.data);
               var fingerprint = new Fingerprint().get();
@@ -172,7 +170,7 @@
           });
 
           //Add first timeout
-          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 200);
+          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 600);
 
       }
       /**
@@ -243,7 +241,7 @@
           createResponse(input,element.data('participantId'),element.data('sessionId'),slideNumber,responseTime);
 
           //Recall on timeout if there's no click
-          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 2000);
+          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 600);
         }
 
         if(slideNumber < slides.length) {
