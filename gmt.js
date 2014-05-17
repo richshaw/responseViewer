@@ -119,6 +119,13 @@
               if (data.data.meta == 1) {
                 element.data('meta',urlVars());
               }
+              else if (data.data.meta == 2){
+                metaData = element.data('metaval');
+                //Remove any data settings
+                console.log(metaData);
+                element.data('meta',metaData);
+
+              }
 
               //Unleash the beast
               init();
@@ -447,7 +454,7 @@
 
     //////// GO, GO, G0 ///////
     var options = $( "#response-experiment" ).data();
-    console.log(options);
+    //console.log(options);
     $( "#response-experiment" ).response(options);
 });
 
