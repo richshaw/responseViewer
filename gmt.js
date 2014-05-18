@@ -73,13 +73,15 @@
           endpoint : 'http://www.timedresponse.io.php54-2.ord1-1.websitetestlink.com/experiment/',
           id: null,
           complete: null,
+          time: 900
       }, options);
 
       //Save copy of element plugin is attached to
       var element = $(this);
-      //Has experiment data been saved
+      //Has experiment data been saved?
       var saved = false;
-
+      //Has current slide been clicked?
+      var clicked = false;
       var height = element.parent().height();
       var width = element.parent().width();
 
@@ -121,10 +123,7 @@
               }
               else if (data.data.meta == 2){
                 metaData = element.data('metaval');
-                //Remove any data settings
-                console.log(metaData);
                 element.data('meta',metaData);
-
               }
 
               //Unleash the beast
@@ -164,20 +163,19 @@
           //But show the first
           slides.first().addClass('current').show();
 
-          //Add click event
-          $( ".slide" ).on( "click", function() {
-              var userInput = 'click';
-              nextSlide(userInput);
-          });
-
-          //Add touch event
-          $( ".slide" ).on( "touchstart", function() {
-              var userInput = 'touch';
-              nextSlide(userInput);
+          $( ".slide" ).on('touchstart click', function(event){
+              event.stopPropagation();
+              event.preventDefault();
+              if(event.handled !== true) {
+                  clickSlide('click');
+                  event.handled = true;
+              } else {
+                  return false;
+              }
           });
 
           //Add first timeout
-          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 600);
+          timeout = setTimeout(function(){nextSlide()}, settings.time);
 
       }
       /**
@@ -235,7 +233,7 @@
       Displays next slide
       slides, slideNumber and startTime are global vars
       */
-      function nextSlide(input) {
+      function nextSlide() {
 
         var currentSlide = slides.siblings('.current');
 
@@ -245,18 +243,25 @@
         //Store response data each slide
         if(slideNumber <= slides.length) {
           var responseTime = getTimestamp() - startTime;
-          createResponse(input,element.data('participantId'),element.data('sessionId'),slideNumber,responseTime);
+
+          if(clicked == false) {
+            var input = 'time';
+            createResponse(input,element.data('participantId'),element.data('sessionId'),slideNumber,responseTime);
+          }
 
           //Recall on timeout if there's no click
-          timeout = setTimeout(function(i) { return function() { nextSlide(i);};}('time'), 600);
+          timeout = setTimeout(function(){nextSlide()}, settings.time);
         }
 
+        //Set next slide
         if(slideNumber < slides.length) {
+          clicked = false;
           currentSlide.removeClass('current').hide().next().addClass('current').show();
           startTime = getTimestamp();
           slideNumber++;
         }
         else if(slideNumber == slides.length) {
+          clicked = false;
           currentSlide.removeClass('current');
           startTime = getTimestamp();
           slideNumber++;
@@ -276,6 +281,23 @@
       }
       /**
       @End of nextSlide
+      */
+
+      /**
+      Reacts to slide click
+      slides, slideNumber and startTime are global vars
+      */
+      function clickSlide(input) {
+        $('polygon', slides.siblings('.current')).css('fill','green');
+        //Store response data each slide
+        if(slideNumber <= slides.length) {
+          var responseTime = getTimestamp() - startTime;
+          createResponse(input,element.data('participantId'),element.data('sessionId'),slideNumber,responseTime);
+          clicked = true;
+        }
+      }
+      /**
+      @End of clickSlide
       */
 
       /**
@@ -454,7 +476,6 @@
 
     //////// GO, GO, G0 ///////
     var options = $( "#response-experiment" ).data();
-    //console.log(options);
     $( "#response-experiment" ).response(options);
 });
 
